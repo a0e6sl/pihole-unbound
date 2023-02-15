@@ -1,0 +1,63 @@
+---
+version: '3.0'
+
+volumes:
+  etc_pihole-unbound:
+  etc_pihole_dnsmasq-unbound:
+  var_lib_unbound:
+  var_log_unbound:
+
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    hostname: ${HOSTNAME}
+    domainname: ${DOMAIN_NAME}
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+      - 82:80/tcp #Allows use of different port to access pihole web interface when other docker containers use port 80
+    environment:
+      - FTLCONF_LOCAL_IPV4=${FTLCONF_LOCAL_IPV4}
+      - TZ=${TZ:-UTC}
+      - WEBPASSWORD=${WEBPASSWORD}
+      - WEBTHEME=${WEBTHEME:-default-darker}
+      - REV_SERVER=${REV_SERVER:-false}
+      - REV_SERVER_TARGET=${REV_SERVER_TARGET}
+      - REV_SERVER_DOMAIN=${REV_SERVER_DOMAIN}
+      - REV_SERVER_CIDR=${REV_SERVER_CIDR}
+      - PIHOLE_DNS_=unbound#53
+      - DNSSEC="true"
+      - DNSMASQ_LISTENING=single
+    volumes:
+      - etc_pihole-unbound:/etc/pihole:rw
+      - etc_pihole_dnsmasq-unbound:/etc/dnsmasq.d:rw
+      - $PWD/pihole/etc/dnsmasq.d/99-edns.conf:/etc/dnsmasq.d/99-edns.conf
+      - $PWD/pihole/etc/dnsmasq.d/lighttpd-external.conf:/etc/lighttpd/external.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    restart: unless-stopped
+    networks:
+      - frontend
+  unbound:
+    container_name: unbound
+    image: mvance/unbound:latest  # For Raspberry "mvance/unbound-pri:latest"
+    hostname: ${HOSTNAME}
+    domainname: ${DOMAIN_NAME}
+    volumes:
+      - var_lib_unbound:/var/lib/unbound
+      - var_log_unbound:/var/log/unbound
+      - $PWD/ubound/etc/unbound/unbound.conf.d/unbound-pihole.conf:/etc/unbound/unbound.conf.d/pi-hole.conf
+      - $PWD/var/lib/unbound/root.hints:/var/lib/unbound/root.hints
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - frontend
+    restart: unless-stopped
+
+networks:
+  frontend:
+    driver: bridge
+    name: frontend
+    external: true
+
