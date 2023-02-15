@@ -61,3 +61,7 @@ networks:
     name: frontend
     external: true
 
+networks:
+  default:
+    external:
+      name: frontend
