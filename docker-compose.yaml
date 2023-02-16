@@ -14,9 +14,14 @@ services:
     hostname: ${HOSTNAME}
     domainname: ${DOMAIN_NAME}
     ports:
-      - 53:53/tcp
-      - 53:53/udp
-      - 82:80/tcp #Allows use of different port to access pihole web interface when other docker containers use port 80
+      - "192.168.2.150:53:53/tcp"  # IP anpassen
+      - "192.168.2.150:53:53/udp"  # IP anpassen
+        #- "192.168.2.150:82:80/tcp"
+        #- 443:443/tcp
+        #- 53:53/tcp
+        #- 53:53/udp
+        #- 82:80/tcp #Allows use of different port to access pihole web interface when other docker containers use port 80
+        #- "192.168.2.150:5335:5335/tcp" # Uncomment to enable unbound access on local server
     environment:
       - FTLCONF_LOCAL_IPV4=${FTLCONF_LOCAL_IPV4}
       - TZ=${TZ:-UTC}
@@ -32,8 +37,8 @@ services:
     volumes:
       - etc_pihole-unbound:/etc/pihole:rw
       - etc_pihole_dnsmasq-unbound:/etc/dnsmasq.d:rw
-      - $PWD/pihole/etc/dnsmasq.d/99-edns.conf:/etc/dnsmasq.d/99-edns.conf
-      - $PWD/pihole/etc/dnsmasq.d/lighttpd-external.conf:/etc/lighttpd/external.conf
+      - $PWD/pihole/99-edns.conf:/etc/dnsmasq.d/99-edns.conf
+      - $PWD/pihole/lighttpd-external.conf:/etc/lighttpd/external.conf
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     restart: unless-stopped
@@ -41,14 +46,12 @@ services:
       - frontend
   unbound:
     container_name: unbound
-    image: mvance/unbound:latest  # For Raspberry "mvance/unbound-pri:latest"
+    image: mvance/unbound-rpi:latest
     hostname: ${HOSTNAME}
     domainname: ${DOMAIN_NAME}
     volumes:
-      - var_lib_unbound:/var/lib/unbound
-      - var_log_unbound:/var/log/unbound
-      - $PWD/ubound/etc/unbound/unbound.conf.d/unbound-pihole.conf:/etc/unbound/unbound.conf.d/pi-hole.conf
-      - $PWD/var/lib/unbound/root.hints:/var/lib/unbound/root.hints
+      - $PWD/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf
+      - $PWD/unbound/root.hints:/opt/unbound/etc/unbound/root.hints
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     networks:
