@@ -13,4 +13,4 @@ docker-compose pull
 
 docker-compose up -d --force-recreate
 # Update root.hints only if its needed
-wget https://www.internic.net/domain/named.root -qO- | sudo tee $PWD/unbound/var/lib/unbound/root.hints
+wget https://www.internic.net/domain/named.root -qO- | sudo tee $PWD/unbound/root.hints
